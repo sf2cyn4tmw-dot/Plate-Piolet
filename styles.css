@@ -181,3 +181,19 @@
 .portion-advanced{margin-top:10px;border-bottom:1px solid var(--line);padding-bottom:10px}
 .portion-advanced summary{font-size:12px;color:var(--muted);cursor:pointer}
 @media(max-width:390px){.food-result .result-title b{font-size:12px}.food-result .result-title small{font-size:10px}.food-result .result-right strong{font-size:12px}.round-add{flex-shrink:0}}
+
+/* Discover v8: make the default search fast and uncluttered on iPhone. */
+.search-empty{padding:14px 0;color:var(--muted);font-size:13px;line-height:2}
+.search-empty button{border:1px solid var(--line);border-radius:15px;color:var(--txt);background:var(--panel2);padding:4px 9px;margin:2px}
+.more-food-tools{font-size:12px;margin:-2px 0 13px;color:var(--muted)}
+.more-food-tools summary{cursor:pointer;padding:5px 0;font-weight:600}
+.extra-food-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.extra-food-tabs button{border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--txt);padding:8px 10px;font-size:11px}
+.searchbox#food-search{font-size:17px;padding:15px 16px;min-height:54px}
+.sheet-tabs button{font-size:13px;flex-shrink:0;padding:11px 15px}
+.smart-result{margin:10px 0}
+.food-result{padding:15px 0;gap:11px}
+.food-result .result-title b{font-size:14px;line-height:1.3}
+.food-result .result-right strong{font-size:14px}
+.round-add{height:37px;width:37px;min-width:37px;cursor:pointer}
+@media(max-width:440px){.sheet{padding:20px 16px calc(20px + env(safe-area-inset-bottom))}.food-mark{display:none}}
