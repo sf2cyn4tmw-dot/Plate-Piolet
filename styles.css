@@ -153,3 +153,22 @@
 .smart-unknown{border:1px dashed var(--line);border-radius:12px;padding:14px;font-size:12px;color:var(--muted);line-height:1.5}
 .theme-light .smart-tag{background:#d5f0dd;color:#225e39}
 @media(max-width:480px){.smart-result-stats strong{font-size:16px}.smart-result{padding:12px}}
+/* v6: One-box intelligent restaurant logging */
+.search-hint{color:var(--muted);font-size:12px;line-height:1.55;margin:9px 0 16px}
+.lookup-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px;margin-bottom:8px}
+.lookup-header h3{font-size:15px;margin:0;letter-spacing:-.25px}
+.lookup-header button{flex-shrink:0}
+.quick-matches{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin:7px 0 16px}
+.quick-matches>strong{font-size:11px;color:var(--muted);display:block;padding-bottom:5px}
+.quick-matches .food-result{padding:8px 0}
+.lookup-progress{padding:16px;display:flex;align-items:flex-start;gap:13px;border:1px solid var(--line);border-radius:15px;margin:10px 0}
+.lookup-progress b{font-size:13px}
+.lookup-progress .note{margin:6px 0 0}
+.lookup-spinner{border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);height:22px;width:22px;flex-shrink:0;animation:lookup-spin 1s linear infinite}
+@keyframes lookup-spin{to{transform:rotate(360deg)}}
+.other-databases{margin-top:24px;border-top:1px solid var(--line);padding:15px 0 0}
+.other-databases summary{font-size:12px;color:var(--muted);font-weight:650;cursor:pointer;list-style:initial}
+.other-databases>.btn{margin:10px 0}
+.smart-result .smart-details ul{padding-left:18px;line-height:1.7}
+.smart-result .smart-details a{color:var(--accent)}
+@media(max-width:440px){.lookup-header h3{font-size:14px}.lookup-header .btn{font-size:11px}}

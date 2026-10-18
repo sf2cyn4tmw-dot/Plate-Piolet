@@ -57,9 +57,16 @@ const I={
   tzatziki:['Tzatziki, ~3 tbsp',55,3,3,3,0],
   quesadilla:['Tortilla with cheese, large',490,20,49,24,3],
   falafel:['Falafel, ~4 pieces',320,12,32,16,8],
+  butterCurry:['Butter chicken curry with chicken, tomato, cream and butter',900,57,28,60,4],
+  tikkaCurry:['Chicken tikka masala in creamy tomato sauce',790,55,28,51,4],
+  curryRice:['Basmati rice, around 1.5 cups',310,6,67,1,1],
+  biryani:['Biryani with chicken, rice and ghee',970,41,126,33,5],
   milk:['Milk or cream in beverage',95,5,10,4,0]
 };
 const T=[
+  {id:'butter-chicken',re:/\b(?:butter\s+chicken|murgh\s+makhani)\b/i,name:'Butter chicken with rice',parts:['butterCurry','curryRice'],margin:.35},
+  {id:'tikka-masala',re:/\btikka\s+masala\b/i,name:'Chicken tikka masala with rice',parts:['tikkaCurry','curryRice'],margin:.35},
+  {id:'biryani',re:/\bbiryani\b/i,name:'Biryani',parts:['biryani'],margin:.35},
   {id:'breakfast-reuben',re:/\bbreakfast\s+reu[bh]en\b/i,name:'Breakfast Reuben',parts:['rye','deliMeat','swiss','sauerkraut','russian','butter','egg'],margin:.3},
   {id:'reuben',re:/\breu[bh]en\b/i,name:'Reuben sandwich',parts:['rye','deliMeat','swiss','sauerkraut','russian','butter'],margin:.3},
   {id:'chicken-caesar',re:/\b(?:chicken\s+caesar|caesar\s+(?:salad\s+)?with\s+chicken)\b/i,name:'Chicken Caesar salad',parts:['greens','grilledChicken','parmesan','croutons','dressing'],margin:.3},
@@ -105,6 +112,7 @@ export function estimateRestaurantMeal(phrase){
   if(/\bwith\s+turkey\b|\bturkey\s+reuben\b/.test(input)) parts=parts.map(x=>x==='deliMeat'?'turkey':x);
   if(venue && match.id==='reuben')parts=parts.map(x=>x==='butter'?'garlicButter':x);
  }
+ if(suppress(input,['rice']))parts=parts.filter(x=>x!=='curryRice');
  if(suppress(input,['dressing','sauce','russian']))parts=parts.filter(x=>!['russian','sauce','mayo','dressing','alfredo','tzatziki'].includes(x));
  if(suppress(input,['cheese','swiss']))parts=parts.filter(x=>!['swiss','american','cheese','parmesan','creamCheese'].includes(x));
  if(suppress(input,['butter']))parts=parts.filter(x=>!['butter','garlicButter'].includes(x));
