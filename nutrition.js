@@ -19,18 +19,25 @@ export function offToFood(p) {
  if(!Number.isFinite(calories)||calories<0)return null;
  const name=String(p.product_name||p.product_name_en||'').trim();
  if(!name)return null;
- return {id:'off-'+String(p.code||name),name:name.slice(0,130),brand:String(p.brands||'').slice(0,100),calories:round(calories),protein:round(n(v.proteins_100g)),carbs:round(n(v.carbohydrates_100g)),fat:round(n(v.fat_100g)),fiber:round(n(v.fiber_100g)),servingG:100,source:'Open Food Facts',barcode:String(p.code||'')};
+ const label=String(p.serving_size||'').trim();
+ const qty=Number(p.serving_quantity);
+ // Serving quantities in g or mL. For beverages, mL is approximately g.
+ const unit=String(p.serving_quantity_unit||'').toLowerCase();
+ let servingG=Number.isFinite(qty)&&qty>0&&qty<=10000&&(!unit||unit==='g'||unit==='ml')?qty:0;
+ if(!servingG&&label){const m=label.match(/(\d+(?:\.\d+)?)\s*(ml|g)\b/i);if(m)servingG=Number(m[1]);}
+ if(!servingG)servingG=100;
+ return {id:'off-'+String(p.code||name),name:name.slice(0,130),brand:String(p.brands||'').slice(0,100),calories:round(calories),protein:round(n(v.proteins_100g)),carbs:round(n(v.carbohydrates_100g)),fat:round(n(v.fat_100g)),fiber:round(n(v.fiber_100g)),servingG,servingLabel:label||'',source:'Open Food Facts',barcode:String(p.code||'')};
 }
 const API='https://world.openfoodfacts.org';
 export async function findProducts(q) {
- const url=`${API}/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15&search_terms=${encodeURIComponent(q)}&fields=code,product_name,product_name_en,brands,nutriments`;
+ const url=`${API}/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15&search_terms=${encodeURIComponent(q)}&fields=code,product_name,product_name_en,brands,nutriments,serving_size,serving_quantity,serving_quantity_unit`;
  const r=await fetch(url,{headers:{'Accept':'application/json'}});
  if(!r.ok)throw Error(`Food search failed (${r.status})`);
  const j=await r.json();return (j.products||[]).map(offToFood).filter(Boolean);
 }
 export async function findBarcode(barcode) {
  const code=String(barcode).replace(/\D/g,''); if(code.length<8 || code.length>14) throw Error('Enter a valid barcode (8–14 digits).');
- const r=await fetch(`${API}/api/v2/product/${encodeURIComponent(code)}.json?fields=code,product_name,product_name_en,brands,nutriments`,{headers:{'Accept':'application/json'}});
+ const r=await fetch(`${API}/api/v2/product/${encodeURIComponent(code)}.json?fields=code,product_name,product_name_en,brands,nutriments,serving_size,serving_quantity,serving_quantity_unit`,{headers:{'Accept':'application/json'}});
  if(!r.ok)throw Error(`Barcode lookup failed (${r.status})`);
  const j=await r.json(); const f=j.status===1?offToFood(j.product):null;
  if(!f)throw Error('Barcode not found or nutrition data unavailable. Enter the label manually.');return f;
@@ -52,13 +59,14 @@ export function usdaToFood(food) {
  const fiber=nutrient([1079],['fiber, total dietary']);
  if (!Number.isFinite(cal) || cal<0 || cal>1200) return null;
  // Search endpoint reports composition per 100g for branded and generic foods.
- const servingG=String(food.servingSizeUnit||'').toLowerCase()==='g'
-   && Number(food.servingSize)>0 ? Number(food.servingSize) : 100;
+ const su=String(food.servingSizeUnit||'').toLowerCase();
+ const servingG=(su==='g'||su==='ml')&&Number(food.servingSize)>0?Number(food.servingSize):100;
+ const servingLabel=String(food.householdServingFullText||'').trim();
  return {id:'usda-'+food.fdcId,name:String(food.description).slice(0,130),
    brand:String(food.brandName||food.brandOwner||food.dataType||'').slice(0,110),
    calories:round(cal),protein:round(Number.isFinite(protein)?protein:0),
    carbs:round(Number.isFinite(carbs)?carbs:0),fat:round(Number.isFinite(fat)?fat:0),
-   fiber:round(Number.isFinite(fiber)?fiber:0),servingG,source:'USDA FoodData Central',
+   fiber:round(Number.isFinite(fiber)?fiber:0),servingG,servingLabel,source:'USDA FoodData Central',
    reference:'https://fdc.nal.usda.gov/food-details/'+food.fdcId+'/nutrients'};
 }
 export async function findUSDA(query) {

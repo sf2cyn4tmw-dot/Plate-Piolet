@@ -172,3 +172,12 @@
 .smart-result .smart-details ul{padding-left:18px;line-height:1.7}
 .smart-result .smart-details a{color:var(--accent)}
 @media(max-width:440px){.lookup-header h3{font-size:14px}.lookup-header .btn{font-size:11px}}
+
+/* Version 7: keep search result rows usable on small iPhone screens. */
+.food-result{min-width:0;max-width:100%}
+.food-result .result-title{min-width:0;overflow-wrap:anywhere}
+.food-result .result-right{flex-shrink:0;gap:7px}
+.food-result .result-right strong{text-align:right;white-space:nowrap}
+.portion-advanced{margin-top:10px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.portion-advanced summary{font-size:12px;color:var(--muted);cursor:pointer}
+@media(max-width:390px){.food-result .result-title b{font-size:12px}.food-result .result-title small{font-size:10px}.food-result .result-right strong{font-size:12px}.round-add{flex-shrink:0}}
