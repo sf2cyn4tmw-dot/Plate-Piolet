@@ -35,6 +35,65 @@ export async function findBarcode(barcode) {
  const j=await r.json(); const f=j.status===1?offToFood(j.product):null;
  if(!f)throw Error('Barcode not found or nutrition data unavailable. Enter the label manually.');return f;
 }
+// USDA FoodData Central offers broad food and branded-menu lookup. DEMO_KEY is
+// deliberately restricted: for heavier use, use a private server-side API key.
+export function usdaToFood(food) {
+ if (!food?.fdcId || !food?.description) return null;
+ const items=food.foodNutrients||[];
+ function nutrient(ids, names=[]) {
+   const matched=items.find(x => ids.includes(Number(x.nutrientId ?? x.number)) &&
+     (x.unitName||'').toLowerCase()!=='kj') || items.find(x=>names.some(q=>(x.nutrientName||x.name||'').toLowerCase()===q));
+   return matched ? Number(matched.value ?? matched.amount) : NaN;
+ }
+ const cal=nutrient([1008,2047,2048],['energy']);
+ const protein=nutrient([1003],['protein']);
+ const carbs=nutrient([1005],['carbohydrate, by difference']);
+ const fat=nutrient([1004],['total lipid (fat)']);
+ const fiber=nutrient([1079],['fiber, total dietary']);
+ if (!Number.isFinite(cal) || cal<0 || cal>1200) return null;
+ // Search endpoint reports composition per 100g for branded and generic foods.
+ const servingG=String(food.servingSizeUnit||'').toLowerCase()==='g'
+   && Number(food.servingSize)>0 ? Number(food.servingSize) : 100;
+ return {id:'usda-'+food.fdcId,name:String(food.description).slice(0,130),
+   brand:String(food.brandName||food.brandOwner||food.dataType||'').slice(0,110),
+   calories:round(cal),protein:round(Number.isFinite(protein)?protein:0),
+   carbs:round(Number.isFinite(carbs)?carbs:0),fat:round(Number.isFinite(fat)?fat:0),
+   fiber:round(Number.isFinite(fiber)?fiber:0),servingG,source:'USDA FoodData Central',
+   reference:'https://fdc.nal.usda.gov/food-details/'+food.fdcId+'/nutrients'};
+}
+export async function findUSDA(query) {
+ const q=String(query||'').trim();
+ if(q.length<2)throw Error('Enter a longer search.');
+ // This public demonstration key is limited to 30 requests/hour, 50/day per IP.
+ const url='https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&'
+  +new URLSearchParams({query:q,pageSize:'25'}).toString();
+ const res=await fetch(url,{headers:{Accept:'application/json'}});
+ if(!res.ok)throw Error('USDA lookup failed ('+res.status+'). Demo requests may be limited.');
+ const data=await res.json();
+ return (data.foods||[]).map(usdaToFood).filter(Boolean);
+}
+
+// Extract per-serving published values from plain nutrition text copied from a menu
+// or PDF. This is extraction, not inference; missing macros should be reviewed.
+export function parsePublishedFacts(text, foodName='Restaurant meal') {
+ const raw=String(text||'').replace(/(\d),(?=\d{3}\b)/g,'$1').replace(/[,\u00a0]/g,' ').replace(/\s+/g,' ').trim();
+ if(!raw)throw Error('Paste the published nutrition text first.');
+ function val(expressions) {
+   for(const re of expressions){const m=raw.match(re);if(m){const x=Number(m[1]);if(Number.isFinite(x))return x;}}
+   return null;
+ }
+ const kcal=val([/\b(?:calories|energy\s*\(kcal\)|kcal)\s*[:\-]?\s*(\d{1,5}(?:\.\d+)?)/i, /\b(\d{1,5}(?:\.\d+)?)\s*(?:kcal|calories)\b/i]);
+ if(kcal===null || kcal>10000)throw Error('Calories were not found. Paste a nutrition table that includes Calories, Protein, Carbs and Fat.');
+ const protein=val([/\bprotein(?:\s*\(g\))?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g?\b/i, /\b(\d+(?:\.\d+)?)\s*g\s+protein\b/i]);
+ const carbs=val([/\b(?:total\s+)?carbohydrates?(?:\s*\(g\))?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g?\b/i, /\bcarbs?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g?\b/i, /\b(\d+(?:\.\d+)?)\s*g\s+(?:carbs?|carbohydrates?)\b/i]);
+ const fat=val([/\btotal\s+fat(?:\s*\(g\))?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g?\b/i, /\bfat(?:\s*\(g\))?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g?\b/i, /\b(\d+(?:\.\d+)?)\s*g\s+fat\b/i]);
+ const fiber=val([/\b(?:dietary\s+)?fib(?:er|re)(?:\s*\(g\))?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*g?\b/i]);
+ const absent=[['protein',protein],['carbs',carbs],['fat',fat]].filter(([k,v])=>v===null).map(([k])=>k);
+ return {name:String(foodName||'Restaurant meal').trim().slice(0,130)||'Restaurant meal',
+  calories:kcal,protein:protein??0,carbs:carbs??0,fat:fat??0,fiber:fiber??0,
+  notes:'From pasted published nutrition facts, per listed serving. '+(absent.length?'Not found (entered as zero, correct before saving): '+absent.join(', ')+'. ':'')+'Verify portion size and source.'};
+}
+
 export const dateKey=(date=new Date())=>[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
 export function shiftDate(date,days) {const [y,m,d]=date.split('-').map(Number); const x=new Date(y,m-1,d+days);return dateKey(x);}
 export function prettyDate(key,opts={weekday:'long',month:'short',day:'numeric'}) {const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-US',opts);}
